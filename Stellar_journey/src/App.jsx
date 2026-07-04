@@ -10,7 +10,11 @@ function App() {
   const [balance, setBalance] = useState("0");
   const [destination, setDestination] = useState("");
   const [amount, setAmount] = useState("");
-  const [txStatus, setTxStatus] = useState("");
+  const [txStatus, setTxStatus] = useState({
+  status: "",
+  message: "",
+  });
+  const [error, setError] = useState(null);
   const [txHash, setTxHash] = useState("");
 
   useEffect(() => {
