@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { requestAccess } from "@stellar/freighter-api";
 import { getBalance } from "./services/stellar";
 import { createPaymentTransaction } from "./services/sendPayment";
+import { useEffect, useState } from "react";
+import { initializeWalletKit } from "./services/walletKit";
+import { requestAccess } from "@stellar/freighter-api";
 import "./App.css";
 
 function App() {
@@ -12,17 +13,23 @@ function App() {
   const [txStatus, setTxStatus] = useState("");
   const [txHash, setTxHash] = useState("");
 
-  const connectWallet = async () => {
-    try {
-      const result = await requestAccess();
-      const address = result.address;
-      setPublicKey(address);
-      const balanceValue = await getBalance(address);
-      setBalance(balanceValue);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  useEffect(() => {
+  initializeWalletKit();
+}, []);
+
+const connectWallet = async () => {
+  try {
+    const result = await requestAccess();
+    const address = result.address;
+
+    setPublicKey(address);
+
+    const balanceValue = await getBalance(address);
+    setBalance(balanceValue);
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   const handleSend = async () => {
     if (!publicKey) return alert("Connect wallet first");
