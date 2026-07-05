@@ -3,6 +3,7 @@ import { createPaymentTransaction } from "./services/sendPayment";
 import { useEffect, useState } from "react";
 import { initializeWalletKit } from "./services/walletKit";
 import { requestAccess } from "@stellar/freighter-api";
+import { donate, getTotal } from "./services/crowdfunding";
 import "./App.css";
 
 function App() {
@@ -24,34 +25,43 @@ function App() {
 const connectWallet = async () => {
   try {
     const result = await requestAccess();
+
+    console.log("Freighter:", result);
+
     const address = result.address;
+
+    console.log("Address:", address);
 
     setPublicKey(address);
 
     const balanceValue = await getBalance(address);
     setBalance(balanceValue);
-  } catch (error) {
-    console.error(error);
+
+    const total = await getTotal();
+    console.log("Total:", total);
+  } catch (err) {
+    console.error(err);
   }
 };
 
-  const handleSend = async () => {
-    if (!publicKey) return alert("Connect wallet first");
-    if (!destination) return alert("Enter destination address");
-    if (Number(amount) <= 0) return alert("Amount must be greater than 0");
+const handleSend = async () => {
+  try {
+    const stroops = BigInt(Math.floor(Number(amount) * 10_000_000));
 
-    try {
-      setTxStatus("Submitting...");
-      const result = await createPaymentTransaction(publicKey, destination, amount);
-      setTxHash(result.hash);
-      const updatedBalance = await getBalance(publicKey);
-      setBalance(updatedBalance);
-      setTxStatus("Success");
-    } catch (error) {
-      setTxStatus("Failed");
-      console.error(error);
-    }
-  };
+    await donate(publicKey, stroops);
+
+    // Refresh wallet balance
+    const newBalance = await getBalance(publicKey);
+    setBalance(newBalance);
+
+    // Refresh contract total
+    const total = await getTotal();
+    console.log("New Total:", total);
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const disconnectWallet = () => {
     setPublicKey("");
@@ -70,6 +80,8 @@ const connectWallet = async () => {
     navigator.clipboard.writeText(txHash);
     alert("Transaction hash copied!");
   };
+
+  console.log("publicKey state:", publicKey);
 
   return (
     <div className="container">
@@ -128,12 +140,20 @@ const connectWallet = async () => {
               {txStatus === "Submitting..." ? "Sending..." : "Send XLM"}
             </button>
 
-            {txStatus && (
-              <p className={`status ${txStatus === "Success" ? "success" : txStatus === "Failed" ? "failed" : "submitting"}`}>
-                {txStatus === "Success" && "🟢 "}
-                {txStatus === "Failed" && "🔴 "}
-                {txStatus === "Submitting..." && "🟡 "}
-                {txStatus}
+            {txStatus.status && (
+              <p
+                className={`status ${
+                  txStatus.status === "Success"
+                    ? "success"
+                    : txStatus.status === "Failed"
+                    ? "failed"
+                    : "submitting"
+                }`}
+              >
+                {txStatus.status === "Success" && "🟢 "}
+                {txStatus.status === "Failed" && "🔴 "}
+                {txStatus.status === "Submitting..." && "🟡 "}
+                {txStatus.message || txStatus.status}
               </p>
             )}
 
