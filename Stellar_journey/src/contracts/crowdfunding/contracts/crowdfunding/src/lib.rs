@@ -8,6 +8,7 @@ use soroban_sdk::{
     Address,
     Env,
     String,
+    Vec,
 };
 
 #[contracttype]
@@ -168,4 +169,30 @@ impl CrowdfundingContract {
             .get(&DataKey::Campaign(id))
             .unwrap()
     }
+
+    pub fn get_campaigns(env: Env) -> Vec<Campaign> {
+    let count: u32 = env
+        .storage()
+        .persistent()
+        .get(&DataKey::CampaignCount)
+        .unwrap_or(0);
+
+    let mut campaigns = Vec::new(&env);
+
+    let mut id: u32 = 1;
+
+    while id <= count {
+        if let Some(campaign) = env
+            .storage()
+            .persistent()
+            .get::<_, Campaign>(&DataKey::Campaign(id))
+        {
+            campaigns.push_back(campaign);
+        }
+
+        id += 1;
+    }
+
+    campaigns
+}
 }

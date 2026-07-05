@@ -34,22 +34,29 @@ if (typeof window !== "undefined") {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CDDFPLKR62ILTYEP3XQTQN4FD23UQ2LAWSL53BHTE7MU6KEPN3F7OB6G",
+    contractId: "CDTLT7UNUBJ5IJCEWKLAKCDBY2RYD3CTSN47SDFHI2GBBVUBCYUNX3SB",
   }
 } as const
 
-export type DataKey = {tag: "Admin", values: void} | {tag: "Token", values: void} | {tag: "Total", values: void} | {tag: "Donation", values: readonly [string]};
+export type DataKey = {tag: "Admin", values: void} | {tag: "Token", values: void} | {tag: "CampaignCount", values: void} | {tag: "Campaign", values: readonly [u32]} | {tag: "Donation", values: readonly [readonly [u32, string]]};
+
+
+export interface Campaign {
+  active: boolean;
+  creator: string;
+  deadline: u64;
+  description: string;
+  goal: i128;
+  id: u32;
+  raised: i128;
+  title: string;
+}
 
 export interface Client {
   /**
    * Construct and simulate a donate transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  donate: ({donor, amount}: {donor: string, amount: i128}, options?: MethodOptions) => Promise<AssembledTransaction<null>>
-
-  /**
-   * Construct and simulate a get_total transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-   */
-  get_total: (options?: MethodOptions) => Promise<AssembledTransaction<i128>>
+  donate: ({donor, campaign_id, amount}: {donor: string, campaign_id: u32, amount: i128}, options?: MethodOptions) => Promise<AssembledTransaction<null>>
 
   /**
    * Construct and simulate a initialize transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -57,9 +64,29 @@ export interface Client {
   initialize: ({admin, token}: {admin: string, token: string}, options?: MethodOptions) => Promise<AssembledTransaction<null>>
 
   /**
+   * Construct and simulate a get_campaign transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  get_campaign: ({id}: {id: u32}, options?: MethodOptions) => Promise<AssembledTransaction<Campaign>>
+
+  /**
    * Construct and simulate a get_donation transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  get_donation: ({donor}: {donor: string}, options?: MethodOptions) => Promise<AssembledTransaction<i128>>
+  get_donation: ({campaign_id, donor}: {campaign_id: u32, donor: string}, options?: MethodOptions) => Promise<AssembledTransaction<i128>>
+
+  /**
+   * Construct and simulate a get_campaigns transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  get_campaigns: (options?: MethodOptions) => Promise<AssembledTransaction<Array<Campaign>>>
+
+  /**
+   * Construct and simulate a create_campaign transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  create_campaign: ({creator, title, description, goal, deadline}: {creator: string, title: string, description: string, goal: i128, deadline: u64}, options?: MethodOptions) => Promise<AssembledTransaction<null>>
+
+  /**
+   * Construct and simulate a get_campaign_count transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  get_campaign_count: (options?: MethodOptions) => Promise<AssembledTransaction<u32>>
 
 }
 export class Client extends ContractClient {
@@ -79,18 +106,25 @@ export class Client extends ContractClient {
   }
   constructor(public readonly options: ContractClientOptions) {
     super(
-      new ContractSpec([ "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAABAAAAAAAAAAAAAAABUFkbWluAAAAAAAAAAAAAAAAAAAFVG9rZW4AAAAAAAAAAAAAAAAAAAVUb3RhbAAAAAAAAAEAAAAAAAAACERvbmF0aW9uAAAAAQAAABM=",
-        "AAAAAAAAAAAAAAAGZG9uYXRlAAAAAAACAAAAAAAAAAVkb25vcgAAAAAAABMAAAAAAAAABmFtb3VudAAAAAAACwAAAAA=",
-        "AAAAAAAAAAAAAAAJZ2V0X3RvdGFsAAAAAAAAAAAAAAEAAAAL",
+      new ContractSpec([ "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAABQAAAAAAAAAAAAAABUFkbWluAAAAAAAAAAAAAAAAAAAFVG9rZW4AAAAAAAAAAAAAAAAAAA1DYW1wYWlnbkNvdW50AAAAAAAAAQAAAAAAAAAIQ2FtcGFpZ24AAAABAAAABAAAAAEAAAAAAAAACERvbmF0aW9uAAAAAQAAA+0AAAACAAAABAAAABM=",
+        "AAAAAQAAAAAAAAAAAAAACENhbXBhaWduAAAACAAAAAAAAAAGYWN0aXZlAAAAAAABAAAAAAAAAAdjcmVhdG9yAAAAABMAAAAAAAAACGRlYWRsaW5lAAAABgAAAAAAAAALZGVzY3JpcHRpb24AAAAAEAAAAAAAAAAEZ29hbAAAAAsAAAAAAAAAAmlkAAAAAAAEAAAAAAAAAAZyYWlzZWQAAAAAAAsAAAAAAAAABXRpdGxlAAAAAAAAEA==",
+        "AAAAAAAAAAAAAAAGZG9uYXRlAAAAAAADAAAAAAAAAAVkb25vcgAAAAAAABMAAAAAAAAAC2NhbXBhaWduX2lkAAAAAAQAAAAAAAAABmFtb3VudAAAAAAACwAAAAA=",
         "AAAAAAAAAAAAAAAKaW5pdGlhbGl6ZQAAAAAAAgAAAAAAAAAFYWRtaW4AAAAAAAATAAAAAAAAAAV0b2tlbgAAAAAAABMAAAAA",
-        "AAAAAAAAAAAAAAAMZ2V0X2RvbmF0aW9uAAAAAQAAAAAAAAAFZG9ub3IAAAAAAAATAAAAAQAAAAs=" ]),
+        "AAAAAAAAAAAAAAAMZ2V0X2NhbXBhaWduAAAAAQAAAAAAAAACaWQAAAAAAAQAAAABAAAH0AAAAAhDYW1wYWlnbg==",
+        "AAAAAAAAAAAAAAAMZ2V0X2RvbmF0aW9uAAAAAgAAAAAAAAALY2FtcGFpZ25faWQAAAAABAAAAAAAAAAFZG9ub3IAAAAAAAATAAAAAQAAAAs=",
+        "AAAAAAAAAAAAAAANZ2V0X2NhbXBhaWducwAAAAAAAAAAAAABAAAD6gAAB9AAAAAIQ2FtcGFpZ24=",
+        "AAAAAAAAAAAAAAAPY3JlYXRlX2NhbXBhaWduAAAAAAUAAAAAAAAAB2NyZWF0b3IAAAAAEwAAAAAAAAAFdGl0bGUAAAAAAAAQAAAAAAAAAAtkZXNjcmlwdGlvbgAAAAAQAAAAAAAAAARnb2FsAAAACwAAAAAAAAAIZGVhZGxpbmUAAAAGAAAAAA==",
+        "AAAAAAAAAAAAAAASZ2V0X2NhbXBhaWduX2NvdW50AAAAAAAAAAAAAQAAAAQ=" ]),
       options
     )
   }
   public readonly fromJSON = {
     donate: this.txFromJSON<null>,
-        get_total: this.txFromJSON<i128>,
         initialize: this.txFromJSON<null>,
-        get_donation: this.txFromJSON<i128>
+        get_campaign: this.txFromJSON<Campaign>,
+        get_donation: this.txFromJSON<i128>,
+        get_campaigns: this.txFromJSON<Array<Campaign>>,
+        create_campaign: this.txFromJSON<null>,
+        get_campaign_count: this.txFromJSON<u32>
   }
 }
