@@ -1,104 +1,91 @@
-# Stellar Wallet Dashboard
+# Stellar Crowdfunding DApp
 
-A simple React-based Stellar dApp that allows users to connect their Freighter wallet, view their XLM balance, and send XLM transactions on the Stellar Testnet.
+A decentralized crowdfunding platform built on the **Stellar Soroban** smart contract platform. The application allows users to create fundraising campaigns, donate securely using Stellar assets, manage campaigns, and withdraw funds after campaigns are completed.
 
 ## Features
 
-### Wallet Integration
-
-* Connect Freighter Wallet
-* Disconnect Wallet
-* Display connected wallet address
-
-### Balance Handling
-
-* Fetch XLM balance from Stellar Testnet
-* Display wallet balance in real time
-* Refresh balance after successful transactions
-
-### Transaction Functionality
-
-* Send XLM to another Stellar account
-* Sign transactions securely using Freighter
-* Submit transactions to Stellar Testnet
-* Display transaction status
-* Display transaction hash
-* Copy transaction hash to clipboard
-* View transaction on Stellar Explorer
-
-### User Experience
-
-* Responsive UI
-* Input validation
-* Transaction feedback (Success / Failed / Submitting)
-* Modern dashboard design
-
----
+* Connect Stellar wallet
+* Create crowdfunding campaigns
+* View all active and closed campaigns
+* View campaign details
+* Donate to campaigns
+* Live campaign progress tracking
+* Campaign owner can close campaigns
+* Campaign owner can withdraw raised funds
+* Automatic wallet balance refresh after transactions
+* Responsive React frontend
+* Soroban smart contract backend
 
 ## Tech Stack
 
 ### Frontend
 
 * React
+* React Router
 * Vite
+* JavaScript
+* CSS
 
 ### Blockchain
 
+* Stellar Soroban
 * Stellar SDK
-* Stellar Horizon API
-* Stellar Testnet
+* Freighter Wallet API
+* Stellar Wallets Kit (prepared for multi-wallet support)
 
-### Wallet
+### Smart Contract
 
-* Freighter Wallet
+* Rust
+* Soroban SDK
 
 ---
 
 ## Project Structure
 
-```text
-src/
+```
+Stellar_journey/
 │
-├── services/
-│   ├── stellar.js
-│   └── sendPayment.js
+├── src/
+│   ├── components/
+│   │   ├── CampaignCard.jsx
+│   │   ├── CreateCampaign.jsx
+│   │   └── Navbar.jsx
+│   │
+│   ├── context/
+│   │   └── WalletContext.jsx
+│   │
+│   ├── pages/
+│   │   ├── Home.jsx
+│   │   └── CampaignDetails.jsx
+│   │
+│   ├── services/
+│   │   ├── crowdfunding.js
+│   │   └── stellar.js
+│   │
+│   ├── contracts/
+│   │   └── crowdfunding/
+│   │       └── Rust Soroban Contract
+│   │
+│   ├── App.jsx
+│   └── main.jsx
 │
-├── App.jsx
-├── App.css
-└── main.jsx
+├── package.json
+└── README.md
 ```
 
 ---
 
-## Installation
+## Smart Contract Functions
 
-### Clone Repository
-
-```bash
-git clone <repository-url>
-cd <project-folder>
-```
-
-### Install Dependencies
-
-```bash
-npm install
-```
-
-### Start Development Server
-
-```bash
-npm run dev
-```
-
----
-
-## Required Packages
-
-```bash
-npm install @stellar/stellar-sdk
-npm install @stellar/freighter-api
-```
+* `initialize()`
+* `create_campaign()`
+* `get_campaign()`
+* `get_campaigns()`
+* `get_campaign_count()`
+* `donate()`
+* `close_campaign()`
+* `withdraw()`
+* `get_donation()`
 
 ---
 
@@ -106,155 +93,150 @@ npm install @stellar/freighter-api
 
 ### 1. Connect Wallet
 
-The application connects to the user's Freighter wallet using:
+The user connects a Stellar wallet to the application.
 
-```javascript
-requestAccess()
-```
+### 2. Create Campaign
 
-The wallet address is then stored in React state.
+A campaign creator provides:
 
----
+* Title
+* Description
+* Funding Goal
+* Deadline
 
-### 2. Fetch Balance
+The campaign is stored on the Soroban blockchain.
 
-The app loads account data from Stellar Horizon:
+### 3. Donate
 
-```javascript
-server.loadAccount(publicKey)
-```
+Users can donate Stellar assets to any active campaign.
 
-The native XLM balance is extracted and displayed in the UI.
+Each successful donation:
 
----
+* Transfers tokens to the smart contract
+* Updates the campaign's total raised amount
+* Refreshes the wallet balance
+* Updates campaign progress
 
-### 3. Build Transaction
+### 4. Close Campaign
 
-A payment transaction is created using:
+Only the campaign creator can close an active campaign.
 
-```javascript
-new StellarSdk.TransactionBuilder(...)
-```
+After closing:
 
-The transaction includes:
+* Donations are disabled.
+* The campaign status changes to Closed.
 
-* Sender account
-* Destination account
-* Amount
-* Network configuration
-* Base fee
+### 5. Withdraw Funds
 
----
+Once the campaign is closed, the creator can withdraw the collected funds.
 
-### 4. Sign Transaction
-
-The transaction is converted to XDR and signed using Freighter:
-
-```javascript
-signTransaction(xdr)
-```
-
-The private key never leaves the wallet.
+Funds can only be withdrawn once.
 
 ---
 
-### 5. Submit Transaction
+## Installation
 
-The signed transaction is submitted to Stellar Testnet:
+Clone the repository:
 
-```javascript
-server.submitTransaction(...)
+```bash
+git clone <repository-url>
 ```
 
-A transaction hash is returned after successful submission.
+Navigate into the project:
 
----
+```bash
+cd Stellar_journey
+```
 
-## Security
+Install dependencies:
 
-This application never accesses or stores user private keys.
+```bash
+npm install
+```
 
-Transaction signing is handled entirely by Freighter Wallet.
+Run the development server:
 
-Security flow:
-
-```text
-React App
-    ↓
-Build Transaction
-    ↓
-Freighter Wallet
-    ↓
-User Approval
-    ↓
-Transaction Signed
-    ↓
-Submit to Stellar
+```bash
+npm run dev
 ```
 
 ---
 
-## Validation
+## Smart Contract
 
-The application validates:
+Build the contract:
 
-* Wallet connection
-* Destination address
-* Transaction amount
+```bash
+stellar contract build
+```
 
-Example:
+Deploy the contract:
 
-```javascript
-if (!publicKey) {
-  alert("Connect wallet first");
-  return;
-}
+```bash
+stellar contract deploy \
+  --alias crowdfunding \
+  --source alice \
+  --network testnet
+```
+
+Initialize the contract:
+
+```bash
+stellar contract invoke \
+  --id crowdfunding \
+  --source alice \
+  --network testnet \
+  -- initialize \
+  --admin <ADMIN_ADDRESS> \
+  --token <TOKEN_CONTRACT_ADDRESS>
 ```
 
 ---
 
-## Stellar Testnet
+## Wallet Support
 
-This project uses Stellar Testnet for development and testing.
+Current implementation:
 
-Testnet Horizon Endpoint:
+* Freighter Wallet
 
-```text
-https://horizon-testnet.stellar.org
-```
+Prepared for future integration:
 
----
-
-## Learning Outcomes
-
-During development of this project, the following blockchain concepts were implemented and understood:
-
-* Public Key vs Private Key
-* Wallet Authentication
-* Stellar Accounts
-* Sequence Numbers
-* Replay Protection
-* Transaction Building
-* XDR Serialization
-* Digital Signatures
-* Transaction Submission
-* Blockchain State Updates
+* Stellar Wallets Kit
+* xBull
+* Albedo
+* Lobstr
+* Rabet
+* Hana
+* WalletConnect compatible wallets
 
 ---
 
 ## Future Improvements
 
-* Automatic wallet reconnection
+* Full multi-wallet support
+* Live blockchain event synchronization
+* Campaign search and filtering
+* Campaign categories
+* Campaign images
+* User dashboard
 * Transaction history
-* Support for custom Stellar assets
-* Soroban smart contract integration
-* Dark / Light theme toggle
-* Multi-wallet support
+* Better analytics
+* Mobile-first UI improvements
 
 ---
 
-## Author
+## Screenshots
 
-Pranjal Gupta
+Add screenshots of:
 
-Built as part of a Stellar blockchain development learning project using React, Stellar SDK, and Freighter Wallet.
+* Home page
+* Campaign details
+* Create campaign page
+* Wallet connection
+* Donation flow
+
+---
+
+## License
+
+This project is developed for learning and demonstrating decentralized application development on the Stellar Soroban platform.
