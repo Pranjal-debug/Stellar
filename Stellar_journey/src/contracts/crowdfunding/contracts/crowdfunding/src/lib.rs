@@ -31,6 +31,7 @@ pub struct Campaign {
     pub raised: i128,
     pub deadline: u64,
     pub active: bool,
+    pub withdrawn: bool,
 }
 
 #[contract]
@@ -38,6 +39,34 @@ pub struct CrowdfundingContract;
 
 #[contractimpl]
 impl CrowdfundingContract {
+
+    pub fn close_campaign(
+    env: Env,
+    creator: Address,
+    campaign_id: u32,
+) {
+    creator.require_auth();
+
+    let mut campaign: Campaign = env
+        .storage()
+        .persistent()
+        .get(&DataKey::Campaign(campaign_id))
+        .unwrap();
+
+    if campaign.creator != creator {
+        panic!("Only campaign creator can close campaign");
+    }
+
+    if !campaign.active {
+        panic!("Campaign already closed");
+    }
+
+    campaign.active = false;
+
+    env.storage()
+        .persistent()
+        .set(&DataKey::Campaign(campaign_id), &campaign);
+}
 
     pub fn donate(
     env: Env,
@@ -48,10 +77,10 @@ impl CrowdfundingContract {
     donor.require_auth();
 
     let token_address: Address = env
-        .storage()
-        .persistent()
-        .get(&DataKey::Token)
-        .unwrap();
+    .storage()
+    .persistent()
+    .get(&DataKey::Token)
+    .expect("Token not initialized");
 
     let token = token::Client::new(&env, &token_address);
 
@@ -137,15 +166,16 @@ impl CrowdfundingContract {
         count += 1;
 
         let campaign = Campaign {
-            id: count,
-            creator: creator.clone(),
-            title,
-            description,
-            goal,
-            raised: 0,
-            deadline,
-            active: true,
-        };
+    id: count,
+    creator: creator.clone(),
+    title,
+    description,
+    goal,
+    raised: 0,
+    deadline,
+    active: true,
+    withdrawn: false,
+};
 
         env.storage()
             .persistent()
@@ -163,12 +193,11 @@ impl CrowdfundingContract {
             .unwrap_or(0)
     }
 
-    pub fn get_campaign(env: Env, id: u32) -> Campaign {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Campaign(id))
-            .unwrap()
-    }
+    pub fn get_campaign(env: Env, id: u32) -> Option<Campaign> {
+    env.storage()
+        .persistent()
+        .get(&DataKey::Campaign(id))
+}
 
     pub fn get_campaigns(env: Env) -> Vec<Campaign> {
     let count: u32 = env
@@ -194,5 +223,55 @@ impl CrowdfundingContract {
     }
 
     campaigns
+}
+
+pub fn withdraw(
+    env: Env,
+    creator: Address,
+    campaign_id: u32,
+) {
+    creator.require_auth();
+
+    let token_address: Address = env
+        .storage()
+        .persistent()
+        .get(&DataKey::Token)
+        .unwrap();
+
+    let token = token::Client::new(&env, &token_address);
+
+    let mut campaign: Campaign = env
+        .storage()
+        .persistent()
+        .get(&DataKey::Campaign(campaign_id))
+        .unwrap();
+
+    if creator != campaign.creator {
+        panic!("Not campaign creator");
+    }
+
+    if campaign.active {
+        panic!("Campaign is still active");
+    }
+
+    if campaign.withdrawn {
+        panic!("Funds already withdrawn");
+    }
+
+    if campaign.raised <= 0 {
+        panic!("No funds available");
+    }
+
+    token.transfer(
+        &env.current_contract_address(),
+        &creator,
+        &campaign.raised,
+    );
+
+    campaign.withdrawn = true;
+
+    env.storage()
+        .persistent()
+        .set(&DataKey::Campaign(campaign_id), &campaign);
 }
 }
