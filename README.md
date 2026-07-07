@@ -227,13 +227,15 @@ Prepared for future integration:
 
 ## Screenshots
 
-Add screenshots of:
 
 * Home page
+  <img src="https://github.com/Pranjal-debug/Stellar/blob/main/ss/Screenshot%202026-07-07%20135921.png?raw=true">
 * Campaign details
+  <img src="https://github.com/Pranjal-debug/Stellar/blob/main/ss/Screenshot%202026-07-07%20140001.png?raw=true">
 * Create campaign page
+  <img src="https://github.com/Pranjal-debug/Stellar/blob/main/ss/Screenshot%202026-07-07%20140349.png?raw=true">
 * Wallet connection
-* Donation flow
+  <img src="https://github.com/Pranjal-debug/Stellar/blob/main/ss/Screenshot%202026-07-07%20135932.png?raw=true">
 
 ---
 
