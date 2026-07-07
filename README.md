@@ -213,7 +213,6 @@ Prepared for future integration:
 
 ## Future Improvements
 
-* Full multi-wallet support
 * Live blockchain event synchronization
 * Campaign search and filtering
 * Campaign categories
