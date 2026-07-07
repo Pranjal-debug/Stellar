@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import { requestAccess } from "@stellar/freighter-api";
+import StellarWalletsKit from "../services/walletKit";
 import { getBalance } from "../services/stellar";
 
 const WalletContext = createContext();
@@ -8,30 +8,31 @@ export function WalletProvider({ children }) {
   const [publicKey, setPublicKey] = useState("");
   const [balance, setBalance] = useState("0");
 
-  async function connectWallet() {
-    try {
-      const result = await requestAccess();
+async function connectWallet() {
+  try {
+    const { address } = await StellarWalletsKit.authModal();
 
-      if (!result.address) {
-        throw new Error("Wallet not connected");
-      }
+    setPublicKey(address);
 
-      const address = result.address;
+    const bal = await getBalance(address);
 
-      setPublicKey(address);
-
-      const bal = await getBalance(address);
-
-      setBalance(bal);
-    } catch (err) {
-      console.error(err);
-    }
+    setBalance(bal);
+  } catch (err) {
+  if (err.code === -1) {
+    return; // user closed the modal
   }
 
-  function disconnectWallet() {
-    setPublicKey("");
-    setBalance("0");
-  }
+  console.error(err);
+  alert(err.message || "Failed to connect wallet");
+}
+}
+
+  async function disconnectWallet() {
+  await StellarWalletsKit.disconnect();
+
+  setPublicKey("");
+  setBalance("0");
+}
 
   async function refreshBalance() {
     if (!publicKey) return;

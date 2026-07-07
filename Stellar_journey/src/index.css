@@ -472,3 +472,120 @@ button:disabled {
   margin-top: 4px;
   font-size: 14px;
 }
+
+/* =======================================================
+   STELLAR WALLETS KIT OBFUSCATED CLASS OVERRIDES
+   ======================================================= */
+
+/* 1. Backdrop Blur Overlay Layer */
+section.stellar-wallets-kit,
+section.stellar-wallets-kit > div:first-child {
+  background-color: rgba(7, 11, 21, 0.7) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* 2. Main Modal Glass Container */
+section.stellar-wallets-kit div.glass,
+section.stellar-wallets-kit section {
+  background: rgba(22, 28, 45, 0.75) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* 3. Modal Title Header Text */
+section.stellar-wallets-kit h1 {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  color: #ffffff !important;
+  font-family: inherit !important;
+}
+
+/* 4. Action Close and Help Header Buttons */
+section.stellar-wallets-kit header button {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: #64748b !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+section.stellar-wallets-kit header button:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 5. Wallet Options List Matrix (UL & LI Elements) */
+section.stellar-wallets-kit ul {
+  gap: 12px !important; /* Forces spacing between layout choices */
+}
+
+section.stellar-wallets-kit li {
+  background: rgba(15, 23, 42, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 14px !important;
+  padding: 14px 18px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer !important;
+}
+
+/* Interactive Hover States for Wallet Selectors */
+section.stellar-wallets-kit li:hover {
+  background: rgba(99, 102, 241, 0.08) !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px -6px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* 6. Wallet Titles Inside Option Blocks */
+section.stellar-wallets-kit li p {
+  color: #f8fafc !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+/* 7. Wallet Token Provider Logos */
+section.stellar-wallets-kit li img {
+  width: 28px !important;
+  height: 28px !important;
+  object-fit: contain !important;
+  border-radius: 6px !important;
+}
+
+/* 8. "Install Extension" Callout Badges */
+section.stellar-wallets-kit li small {
+  background: rgba(20, 184, 166, 0.1) !important;
+  color: #14b8a6 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  text-transform: uppercase;
+}
+
+/* 9. Modal Bottom Footer Credits Block */
+section.stellar-wallets-kit footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding-top: 16px !important;
+  margin-top: 12px !important;
+}
+
+section.stellar-wallets-kit footer p,
+section.stellar-wallets-kit footer a {
+  font-size: 12px !important;
+  color: #64748b !important;
+}
+
+section.stellar-wallets-kit footer a:hover {
+  color: #6366f1 !important;
+  text-decoration: underline !important;
+}
+
+* {
+  scrollbar-width: none;
+}

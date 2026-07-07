@@ -1,10 +1,10 @@
 import { Client, networks } from "contract-client";
-import { signTransaction } from "@stellar/freighter-api";
+import StellarWalletsKit from "./walletKit";
 
 const client = new Client({
   ...networks.testnet,
   rpcUrl: "https://soroban-testnet.stellar.org",
-  signTransaction,
+  signTransaction: StellarWalletsKit.signTransaction,
 });
 
 export async function getCampaigns() {
