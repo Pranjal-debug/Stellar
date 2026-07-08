@@ -17,10 +17,20 @@ pub struct CrowdfundingContract;
 
 #[contractimpl]
 impl CrowdfundingContract {
+    // Admin
     pub fn initialize(env: Env, admin: Address, token: Address) {
         admin::initialize(env, admin, token);
     }
 
+    pub fn close_campaign(
+        env: Env,
+        creator: Address,
+        campaign_id: u32,
+    ) {
+        admin::close_campaign(env, creator, campaign_id);
+    }
+
+    // Campaign
     pub fn create_campaign(
         env: Env,
         creator: Address,
@@ -39,7 +49,10 @@ impl CrowdfundingContract {
         );
     }
 
-    pub fn get_campaign(env: Env, id: u32) -> Option<Campaign> {
+    pub fn get_campaign(
+        env: Env,
+        id: u32,
+    ) -> Option<Campaign> {
         campaign::get_campaign(env, id)
     }
 
@@ -51,13 +64,19 @@ impl CrowdfundingContract {
         campaign::get_campaign_count(env)
     }
 
+    // Donation
     pub fn donate(
         env: Env,
         donor: Address,
         campaign_id: u32,
         amount: i128,
     ) {
-        donation::donate(env, donor, campaign_id, amount);
+        donation::donate(
+            env,
+            donor,
+            campaign_id,
+            amount,
+        );
     }
 
     pub fn get_donation(
@@ -65,15 +84,11 @@ impl CrowdfundingContract {
         campaign_id: u32,
         donor: Address,
     ) -> i128 {
-        donation::get_donation(env, campaign_id, donor)
-    }
-
-    pub fn close_campaign(
-        env: Env,
-        creator: Address,
-        campaign_id: u32,
-    ) {
-        admin::close_campaign(env, creator, campaign_id);
+        donation::get_donation(
+            env,
+            campaign_id,
+            donor,
+        )
     }
 
     pub fn withdraw(
@@ -81,6 +96,10 @@ impl CrowdfundingContract {
         creator: Address,
         campaign_id: u32,
     ) {
-        donation::withdraw(env, creator, campaign_id);
+        donation::withdraw(
+            env,
+            creator,
+            campaign_id,
+        );
     }
 }
