@@ -89,6 +89,11 @@ Stellar_journey/
 
 ---
 
+## Contract Address
+CCNUZZ5RNTWA5EKKVFSLPATLET5X2VPQ34CAQLZ5L6JPF57UTBFC26AO
+
+---
+
 ## How It Works
 
 ### 1. Connect Wallet
@@ -213,7 +218,6 @@ Prepared for future integration:
 
 ## Future Improvements
 
-* Full multi-wallet support
 * Live blockchain event synchronization
 * Campaign search and filtering
 * Campaign categories
@@ -227,13 +231,15 @@ Prepared for future integration:
 
 ## Screenshots
 
-Add screenshots of:
 
 * Home page
+  <img src="https://github.com/Pranjal-debug/Stellar/blob/main/ss/Screenshot%202026-07-07%20135921.png?raw=true">
 * Campaign details
+  <img src="https://github.com/Pranjal-debug/Stellar/blob/main/ss/Screenshot%202026-07-07%20140001.png?raw=true">
 * Create campaign page
+  <img src="https://github.com/Pranjal-debug/Stellar/blob/main/ss/Screenshot%202026-07-07%20140349.png?raw=true">
 * Wallet connection
-* Donation flow
+  <img src="https://github.com/Pranjal-debug/Stellar/blob/main/ss/Screenshot%202026-07-07%20135932.png?raw=true">
 
 ---
 
