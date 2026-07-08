@@ -136,6 +136,7 @@ button:disabled {
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -351,6 +352,7 @@ button:disabled {
   font-weight: 800;
   letter-spacing: -0.03em;
   background: linear-gradient(135deg, #fff 40%, var(--primary));
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
