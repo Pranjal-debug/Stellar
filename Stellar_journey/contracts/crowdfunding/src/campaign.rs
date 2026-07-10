@@ -1,3 +1,5 @@
+use crate::events::CampaignCreated;
+
 use soroban_sdk::{
     Address,
     Env,
@@ -6,25 +8,32 @@ use soroban_sdk::{
 };
 
 use crate::{
-    storage::DataKey,
+    storage::{self, DataKey},
     types::{Campaign, CampaignStatus},
 };
 
+use crate::errors::ContractError;
+
 pub fn create_campaign(
-        env: Env,
-        creator: Address,
-        title: String,
-        description: String,
-        goal: i128,
-        deadline: u64,
-    ) {
+    env: Env,
+    creator: Address,
+    title: String,
+    description: String,
+    goal: i128,
+    deadline: u64,
+) -> Result<(), ContractError>{
+    if goal <= 0 {
+    return Err(ContractError::InvalidGoal);
+}
+
+let now = env.ledger().timestamp();
+
+if deadline <= now {
+    return Err(ContractError::InvalidDeadline);
+}
         creator.require_auth();
 
-        let mut count: u32 = env
-            .storage()
-            .persistent()
-            .get(&DataKey::CampaignCount)
-            .unwrap_or(0);
+        let mut count = storage::get_campaign_count(&env);
 
         count += 1;
 
@@ -39,19 +48,22 @@ pub fn create_campaign(
             status: CampaignStatus::Active,
         };
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Campaign(count), &campaign);
+        storage::save_campaign(&env, &campaign);
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::CampaignCount, &count);
+        storage::set_campaign_count(&env, count);
+
+        CampaignCreated {
+            campaign_id: count,
+            creator: creator.clone(),
+            goal,
+        }
+        .publish(&env);
+
+        Ok(())
     }
 
 pub fn get_campaign(env: Env, id: u32) -> Option<Campaign> {
-    env.storage()
-        .persistent()
-        .get(&DataKey::Campaign(id))
+    storage::get_campaign(&env, id)
 }
 
 pub fn get_campaigns(env: Env) -> Vec<Campaign> {

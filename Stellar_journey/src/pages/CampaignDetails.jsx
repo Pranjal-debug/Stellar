@@ -78,6 +78,14 @@ function CampaignDetails() {
     0
   );
 
+  const status = campaign.status.tag;
+  
+  const isActive = status === "Active";
+  const isSuccessful = status === "Successful";
+  const isClosed = status === "Closed";
+  const isWithdrawn = status === "Withdrawn";
+  const isExpired = status === "Expired";
+
   return (
     <div className="details-container">
       <div className="details-card">
@@ -115,7 +123,7 @@ function CampaignDetails() {
         </div>
 
         <div className="action-box">
-          {campaign.active ? (
+          {isActive ? (
             <div className="input-group">
               <input
                 type="number"
@@ -136,12 +144,12 @@ function CampaignDetails() {
 
           {campaign.creator === publicKey && (
             <div className="admin-actions">
-              {campaign.active && (
+              {isActive && (
                 <button className="btn-danger" onClick={handleCloseCampaign}>
                   End Campaign
                 </button>
               )}
-              {!campaign.active && !campaign.withdrawn && (
+              {(isSuccessful || isClosed) && !isWithdrawn && (
                 <button className="btn-primary" onClick={handleWithdraw} style={{ background: 'var(--secondary)' }}>
                   Claim Capital
                 </button>

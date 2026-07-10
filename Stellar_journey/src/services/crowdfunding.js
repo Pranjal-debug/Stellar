@@ -1,4 +1,4 @@
-import { Client, networks } from "contract-client";
+import { Client, networks } from "./contract-client/src/index";
 import StellarWalletsKit from "./walletKit";
 
 const client = new Client({
@@ -114,6 +114,20 @@ export async function withdraw(creator, campaignId) {
     },
     {
       publicKey: creator,
+    }
+  );
+
+  return await tx.signAndSend();
+}
+
+export async function initialize(admin, token) {
+  const tx = await client.initialize(
+    {
+      admin,
+      token,
+    },
+    {
+      publicKey: admin,
     }
   );
 

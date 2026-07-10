@@ -2,11 +2,12 @@
 resolver = "2"
 
 members = [
-    "contracts/crowdfunding"
+    "contracts/crowdfunding",
+    "contracts/treasury"
 ]
 
 [workspace.dependencies]
-soroban-sdk = "26.1.0"
+soroban-sdk = "27.0.0"
 
 [profile.release]
 opt-level = "z"

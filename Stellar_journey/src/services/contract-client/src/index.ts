@@ -34,30 +34,51 @@ if (typeof window !== "undefined") {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CCNUZZ5RNTWA5EKKVFSLPATLET5X2VPQ34CAQLZ5L6JPF57UTBFC26AO",
+    contractId: "CDCJGM4XI4CC6DXSMVYJGQHAK6RBOQF7ES7XCC3WO22DIAV7LOP5I5IN",
   }
 } as const
 
-export type DataKey = {tag: "Admin", values: void} | {tag: "Token", values: void} | {tag: "CampaignCount", values: void} | {tag: "Campaign", values: readonly [u32]} | {tag: "Donation", values: readonly [readonly [u32, string]]};
-
 
 export interface Campaign {
-  active: boolean;
   creator: string;
   deadline: u64;
   description: string;
   goal: i128;
   id: u32;
   raised: i128;
+  status: CampaignStatus;
   title: string;
-  withdrawn: boolean;
 }
+
+export type CampaignStatus = {tag: "Active", values: void} | {tag: "Successful", values: void} | {tag: "Expired", values: void} | {tag: "Closed", values: void} | {tag: "Withdrawn", values: void};
+
+export const ContractError = {
+  1: {message:"Unauthorized"},
+  2: {message:"CampaignNotFound"},
+  3: {message:"CampaignClosed"},
+  4: {message:"CampaignExpired"},
+  5: {message:"AlreadyWithdrawn"},
+  6: {message:"NoFundsAvailable"},
+  7: {message:"AlreadyInitialized"},
+  8: {message:"InvalidDeadline"},
+  9: {message:"MinimumDonationNotMet"},
+  10: {message:"GoalAlreadyReached"},
+  11: {message:"Overflow"},
+  12: {message:"InvalidGoal"}
+}
+
+
+
+
+
+
+export type DataKey = {tag: "Admin", values: void} | {tag: "Token", values: void} | {tag: "CampaignCount", values: void} | {tag: "Campaign", values: readonly [u32]} | {tag: "Donation", values: readonly [readonly [u32, string]]};
 
 export interface Client {
   /**
    * Construct and simulate a donate transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  donate: ({donor, campaign_id, amount}: {donor: string, campaign_id: u32, amount: i128}, options?: MethodOptions) => Promise<AssembledTransaction<null>>
+  donate: ({donor, campaign_id, amount}: {donor: string, campaign_id: u32, amount: i128}, options?: MethodOptions) => Promise<AssembledTransaction<Result<void>>>
 
   /**
    * Construct and simulate a withdraw transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -67,7 +88,7 @@ export interface Client {
   /**
    * Construct and simulate a initialize transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  initialize: ({admin, token}: {admin: string, token: string}, options?: MethodOptions) => Promise<AssembledTransaction<null>>
+  initialize: ({admin, token}: {admin: string, token: string}, options?: MethodOptions) => Promise<AssembledTransaction<Result<void>>>
 
   /**
    * Construct and simulate a get_campaign transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -87,12 +108,12 @@ export interface Client {
   /**
    * Construct and simulate a close_campaign transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  close_campaign: ({creator, campaign_id}: {creator: string, campaign_id: u32}, options?: MethodOptions) => Promise<AssembledTransaction<null>>
+  close_campaign: ({creator, campaign_id}: {creator: string, campaign_id: u32}, options?: MethodOptions) => Promise<AssembledTransaction<Result<void>>>
 
   /**
    * Construct and simulate a create_campaign transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  create_campaign: ({creator, title, description, goal, deadline}: {creator: string, title: string, description: string, goal: i128, deadline: u64}, options?: MethodOptions) => Promise<AssembledTransaction<null>>
+  create_campaign: ({creator, title, description, goal, deadline}: {creator: string, title: string, description: string, goal: i128, deadline: u64}, options?: MethodOptions) => Promise<AssembledTransaction<Result<void>>>
 
   /**
    * Construct and simulate a get_campaign_count transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -117,29 +138,36 @@ export class Client extends ContractClient {
   }
   constructor(public readonly options: ContractClientOptions) {
     super(
-      new ContractSpec([ "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAABQAAAAAAAAAAAAAABUFkbWluAAAAAAAAAAAAAAAAAAAFVG9rZW4AAAAAAAAAAAAAAAAAAA1DYW1wYWlnbkNvdW50AAAAAAAAAQAAAAAAAAAIQ2FtcGFpZ24AAAABAAAABAAAAAEAAAAAAAAACERvbmF0aW9uAAAAAQAAA+0AAAACAAAABAAAABM=",
-        "AAAAAQAAAAAAAAAAAAAACENhbXBhaWduAAAACQAAAAAAAAAGYWN0aXZlAAAAAAABAAAAAAAAAAdjcmVhdG9yAAAAABMAAAAAAAAACGRlYWRsaW5lAAAABgAAAAAAAAALZGVzY3JpcHRpb24AAAAAEAAAAAAAAAAEZ29hbAAAAAsAAAAAAAAAAmlkAAAAAAAEAAAAAAAAAAZyYWlzZWQAAAAAAAsAAAAAAAAABXRpdGxlAAAAAAAAEAAAAAAAAAAJd2l0aGRyYXduAAAAAAAAAQ==",
-        "AAAAAAAAAAAAAAAGZG9uYXRlAAAAAAADAAAAAAAAAAVkb25vcgAAAAAAABMAAAAAAAAAC2NhbXBhaWduX2lkAAAAAAQAAAAAAAAABmFtb3VudAAAAAAACwAAAAA=",
+      new ContractSpec([ "AAAAAAAAAAAAAAAGZG9uYXRlAAAAAAADAAAAAAAAAAVkb25vcgAAAAAAABMAAAAAAAAAC2NhbXBhaWduX2lkAAAAAAQAAAAAAAAABmFtb3VudAAAAAAACwAAAAEAAAPpAAAAAgAAB9AAAAANQ29udHJhY3RFcnJvcgAAAA==",
         "AAAAAAAAAAAAAAAId2l0aGRyYXcAAAACAAAAAAAAAAdjcmVhdG9yAAAAABMAAAAAAAAAC2NhbXBhaWduX2lkAAAAAAQAAAAA",
-        "AAAAAAAAAAAAAAAKaW5pdGlhbGl6ZQAAAAAAAgAAAAAAAAAFYWRtaW4AAAAAAAATAAAAAAAAAAV0b2tlbgAAAAAAABMAAAAA",
+        "AAAAAAAAAAAAAAAKaW5pdGlhbGl6ZQAAAAAAAgAAAAAAAAAFYWRtaW4AAAAAAAATAAAAAAAAAAV0b2tlbgAAAAAAABMAAAABAAAD6QAAAAIAAAfQAAAADUNvbnRyYWN0RXJyb3IAAAA=",
         "AAAAAAAAAAAAAAAMZ2V0X2NhbXBhaWduAAAAAQAAAAAAAAACaWQAAAAAAAQAAAABAAAD6AAAB9AAAAAIQ2FtcGFpZ24=",
         "AAAAAAAAAAAAAAAMZ2V0X2RvbmF0aW9uAAAAAgAAAAAAAAALY2FtcGFpZ25faWQAAAAABAAAAAAAAAAFZG9ub3IAAAAAAAATAAAAAQAAAAs=",
         "AAAAAAAAAAAAAAANZ2V0X2NhbXBhaWducwAAAAAAAAAAAAABAAAD6gAAB9AAAAAIQ2FtcGFpZ24=",
-        "AAAAAAAAAAAAAAAOY2xvc2VfY2FtcGFpZ24AAAAAAAIAAAAAAAAAB2NyZWF0b3IAAAAAEwAAAAAAAAALY2FtcGFpZ25faWQAAAAABAAAAAA=",
-        "AAAAAAAAAAAAAAAPY3JlYXRlX2NhbXBhaWduAAAAAAUAAAAAAAAAB2NyZWF0b3IAAAAAEwAAAAAAAAAFdGl0bGUAAAAAAAAQAAAAAAAAAAtkZXNjcmlwdGlvbgAAAAAQAAAAAAAAAARnb2FsAAAACwAAAAAAAAAIZGVhZGxpbmUAAAAGAAAAAA==",
-        "AAAAAAAAAAAAAAASZ2V0X2NhbXBhaWduX2NvdW50AAAAAAAAAAAAAQAAAAQ=" ]),
+        "AAAAAAAAAAAAAAAOY2xvc2VfY2FtcGFpZ24AAAAAAAIAAAAAAAAAB2NyZWF0b3IAAAAAEwAAAAAAAAALY2FtcGFpZ25faWQAAAAABAAAAAEAAAPpAAAAAgAAB9AAAAANQ29udHJhY3RFcnJvcgAAAA==",
+        "AAAAAAAAAAAAAAAPY3JlYXRlX2NhbXBhaWduAAAAAAUAAAAAAAAAB2NyZWF0b3IAAAAAEwAAAAAAAAAFdGl0bGUAAAAAAAAQAAAAAAAAAAtkZXNjcmlwdGlvbgAAAAAQAAAAAAAAAARnb2FsAAAACwAAAAAAAAAIZGVhZGxpbmUAAAAGAAAAAQAAA+kAAAACAAAH0AAAAA1Db250cmFjdEVycm9yAAAA",
+        "AAAAAAAAAAAAAAASZ2V0X2NhbXBhaWduX2NvdW50AAAAAAAAAAAAAQAAAAQ=",
+        "AAAAAQAAAAAAAAAAAAAACENhbXBhaWduAAAACAAAAAAAAAAHY3JlYXRvcgAAAAATAAAAAAAAAAhkZWFkbGluZQAAAAYAAAAAAAAAC2Rlc2NyaXB0aW9uAAAAABAAAAAAAAAABGdvYWwAAAALAAAAAAAAAAJpZAAAAAAABAAAAAAAAAAGcmFpc2VkAAAAAAALAAAAAAAAAAZzdGF0dXMAAAAAB9AAAAAOQ2FtcGFpZ25TdGF0dXMAAAAAAAAAAAAFdGl0bGUAAAAAAAAQ",
+        "AAAAAgAAAAAAAAAAAAAADkNhbXBhaWduU3RhdHVzAAAAAAAFAAAAAAAAAAAAAAAGQWN0aXZlAAAAAAAAAAAAAAAAAApTdWNjZXNzZnVsAAAAAAAAAAAAAAAAAAdFeHBpcmVkAAAAAAAAAAAAAAAABkNsb3NlZAAAAAAAAAAAAAAAAAAJV2l0aGRyYXduAAAA",
+        "AAAABAAAAAAAAAAAAAAADUNvbnRyYWN0RXJyb3IAAAAAAAAMAAAAAAAAAAxVbmF1dGhvcml6ZWQAAAABAAAAAAAAABBDYW1wYWlnbk5vdEZvdW5kAAAAAgAAAAAAAAAOQ2FtcGFpZ25DbG9zZWQAAAAAAAMAAAAAAAAAD0NhbXBhaWduRXhwaXJlZAAAAAAEAAAAAAAAABBBbHJlYWR5V2l0aGRyYXduAAAABQAAAAAAAAAQTm9GdW5kc0F2YWlsYWJsZQAAAAYAAAAAAAAAEkFscmVhZHlJbml0aWFsaXplZAAAAAAABwAAAAAAAAAPSW52YWxpZERlYWRsaW5lAAAAAAgAAAAAAAAAFU1pbmltdW1Eb25hdGlvbk5vdE1ldAAAAAAAAAkAAAAAAAAAEkdvYWxBbHJlYWR5UmVhY2hlZAAAAAAACgAAAAAAAAAIT3ZlcmZsb3cAAAALAAAAAAAAAAtJbnZhbGlkR29hbAAAAAAM",
+        "AAAABQAAAAAAAAAAAAAAC0dvYWxSZWFjaGVkAAAAAAEAAAAMZ29hbF9yZWFjaGVkAAAAAwAAAAAAAAALY2FtcGFpZ25faWQAAAAABAAAAAEAAAAAAAAAB2NyZWF0b3IAAAAAEwAAAAEAAAAAAAAADHRvdGFsX3JhaXNlZAAAAAsAAAAAAAAAAg==",
+        "AAAABQAAAAAAAAAAAAAADkNhbXBhaWduQ2xvc2VkAAAAAAABAAAAD2NhbXBhaWduX2Nsb3NlZAAAAAABAAAAAAAAAAtjYW1wYWlnbl9pZAAAAAAEAAAAAQAAAAI=",
+        "AAAABQAAAAAAAAAAAAAADkZ1bmRzV2l0aGRyYXduAAAAAAABAAAAD2Z1bmRzX3dpdGhkcmF3bgAAAAADAAAAAAAAAAtjYW1wYWlnbl9pZAAAAAAEAAAAAQAAAAAAAAAHY3JlYXRvcgAAAAATAAAAAQAAAAAAAAAGYW1vdW50AAAAAAALAAAAAAAAAAI=",
+        "AAAABQAAAAAAAAAAAAAAD0NhbXBhaWduQ3JlYXRlZAAAAAABAAAAEGNhbXBhaWduX2NyZWF0ZWQAAAADAAAAAAAAAAtjYW1wYWlnbl9pZAAAAAAEAAAAAQAAAAAAAAAHY3JlYXRvcgAAAAATAAAAAQAAAAAAAAAEZ29hbAAAAAsAAAAAAAAAAg==",
+        "AAAABQAAAAAAAAAAAAAAEERvbmF0aW9uUmVjZWl2ZWQAAAABAAAAEWRvbmF0aW9uX3JlY2VpdmVkAAAAAAAAAwAAAAAAAAALY2FtcGFpZ25faWQAAAAABAAAAAEAAAAAAAAABWRvbm9yAAAAAAAAEwAAAAEAAAAAAAAABmFtb3VudAAAAAAACwAAAAAAAAAC",
+        "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAABQAAAAAAAAAAAAAABUFkbWluAAAAAAAAAAAAAAAAAAAFVG9rZW4AAAAAAAAAAAAAAAAAAA1DYW1wYWlnbkNvdW50AAAAAAAAAQAAAAAAAAAIQ2FtcGFpZ24AAAABAAAABAAAAAEAAAAAAAAACERvbmF0aW9uAAAAAQAAA+0AAAACAAAABAAAABM=" ]),
       options
     )
   }
   public readonly fromJSON = {
-    donate: this.txFromJSON<null>,
+    donate: this.txFromJSON<Result<void>>,
         withdraw: this.txFromJSON<null>,
-        initialize: this.txFromJSON<null>,
+        initialize: this.txFromJSON<Result<void>>,
         get_campaign: this.txFromJSON<Option<Campaign>>,
         get_donation: this.txFromJSON<i128>,
         get_campaigns: this.txFromJSON<Array<Campaign>>,
-        close_campaign: this.txFromJSON<null>,
-        create_campaign: this.txFromJSON<null>,
+        close_campaign: this.txFromJSON<Result<void>>,
+        create_campaign: this.txFromJSON<Result<void>>,
         get_campaign_count: this.txFromJSON<u32>
   }
 }

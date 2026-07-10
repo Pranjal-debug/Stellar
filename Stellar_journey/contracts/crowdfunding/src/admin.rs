@@ -1,34 +1,43 @@
+use crate::events::CampaignClosed;
+
 use soroban_sdk::{
     Address,
     Env,
 };
 
 use crate::{
-    storage::DataKey,
+    storage::{self, DataKey},
     types::{Campaign, CampaignStatus},
 };
 
+use crate::errors::ContractError;
+
 pub fn initialize(
-        env: Env,
-        admin: Address,
-        token: Address,
-    ) {
-        if env.storage().persistent().has(&DataKey::Admin) {
-            panic!("Already initialized");
-        }
+    env: Env,
+    admin: Address,
+    token: Address,
+    treasury: Address,
+) -> Result<(), ContractError> {
 
-        admin.require_auth();
-
-        env.storage().persistent().set(&DataKey::Admin, &admin);
-        env.storage().persistent().set(&DataKey::Token, &token);
-        env.storage().persistent().set(&DataKey::CampaignCount, &0u32);
+    if storage::get_admin(&env).is_some() {
+        return Err(ContractError::AlreadyInitialized);
     }
+
+    admin.require_auth();
+
+    storage::set_admin(&env, &admin);
+    storage::set_token(&env, &token);
+    storage::set_treasury(&env, &treasury);
+    storage::set_campaign_count(&env, 0);
+
+    Ok(())
+}
 
     pub fn close_campaign(
     env: Env,
     creator: Address,
     campaign_id: u32,
-) {
+) -> Result<(), ContractError> {
     creator.require_auth();
 
     let mut campaign: Campaign = env
@@ -38,11 +47,11 @@ pub fn initialize(
         .unwrap();
 
     if campaign.creator != creator {
-        panic!("Only campaign creator can close campaign");
+        return Err(ContractError::Unauthorized);
     }
 
     if campaign.status != CampaignStatus::Active {
-    panic!("Campaign already closed");
+    return Err(ContractError::CampaignClosed);
     }
 
     campaign.status = CampaignStatus::Closed;
@@ -50,4 +59,11 @@ pub fn initialize(
     env.storage()
         .persistent()
         .set(&DataKey::Campaign(campaign_id), &campaign);
+
+    CampaignClosed {
+        campaign_id,
+    }
+    .publish(&env);
+
+    Ok(())
 }

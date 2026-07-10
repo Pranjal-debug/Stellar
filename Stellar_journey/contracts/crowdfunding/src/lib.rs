@@ -17,37 +17,47 @@ pub struct CrowdfundingContract;
 
 #[contractimpl]
 impl CrowdfundingContract {
+
+    pub fn initialize(
+    env: Env,
+    admin: Address,
+    token: Address,
+    treasury: Address,
+) -> Result<(), errors::ContractError> {
+    admin::initialize(
+        env,
+        admin,
+        token,
+        treasury,
+    )
+}
+
     // Admin
-    pub fn initialize(env: Env, admin: Address, token: Address) {
-        admin::initialize(env, admin, token);
-    }
+    pub fn create_campaign(
+    env: Env,
+    creator: Address,
+    title: String,
+    description: String,
+    goal: i128,
+    deadline: u64,
+) -> Result<(), errors::ContractError> {
+    campaign::create_campaign(
+        env,
+        creator,
+        title,
+        description,
+        goal,
+        deadline,
+    )
+}
 
     pub fn close_campaign(
-        env: Env,
-        creator: Address,
-        campaign_id: u32,
-    ) {
-        admin::close_campaign(env, creator, campaign_id);
-    }
-
-    // Campaign
-    pub fn create_campaign(
-        env: Env,
-        creator: Address,
-        title: String,
-        description: String,
-        goal: i128,
-        deadline: u64,
-    ) {
-        campaign::create_campaign(
-            env,
-            creator,
-            title,
-            description,
-            goal,
-            deadline,
-        );
-    }
+    env: Env,
+    creator: Address,
+    campaign_id: u32,
+) -> Result<(), errors::ContractError> {
+    admin::close_campaign(env, creator, campaign_id)
+}
 
     pub fn get_campaign(
         env: Env,
@@ -70,13 +80,13 @@ impl CrowdfundingContract {
         donor: Address,
         campaign_id: u32,
         amount: i128,
-    ) {
+    ) -> Result<(), errors::ContractError> {
         donation::donate(
             env,
             donor,
             campaign_id,
             amount,
-        );
+        )
     }
 
     pub fn get_donation(
@@ -95,11 +105,14 @@ impl CrowdfundingContract {
         env: Env,
         creator: Address,
         campaign_id: u32,
-    ) {
+    ) -> Result<(), errors::ContractError> {
         donation::withdraw(
             env,
             creator,
             campaign_id,
-        );
+        )
     }
 }
+
+// #[cfg(test)]
+// mod test;
