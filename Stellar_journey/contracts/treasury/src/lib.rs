@@ -5,6 +5,7 @@ mod errors;
 mod events;
 mod storage;
 mod types;
+mod token_client;
 
 use soroban_sdk::{contract, contractimpl, Address, Env};
 
@@ -25,11 +26,13 @@ impl TreasuryContract {
 
     pub fn deposit(
         env: Env,
+        campaign_id: u32,
         from: Address,
         amount: i128,
     ) -> Result<(), errors::ContractError> {
         admin::deposit(
             env,
+            campaign_id,
             from,
             amount,
         )
@@ -53,13 +56,27 @@ impl TreasuryContract {
 
     pub fn withdraw(
         env: Env,
+        campaign_id: u32,
         to: Address,
         amount: i128,
     ) -> Result<(), errors::ContractError> {
         admin::withdraw(
             env,
+            campaign_id,
             to,
             amount,
         )
     }
+
+    pub fn get_campaign_balance(
+        env: Env,
+        campaign_id: u32,
+    ) -> i128 {
+        storage::get_campaign_balance(
+            &env,
+            campaign_id,
+        )
+    }
 }
+
+pub use crate::TreasuryContract as Contract;

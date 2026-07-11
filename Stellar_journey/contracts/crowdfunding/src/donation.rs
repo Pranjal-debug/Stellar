@@ -16,6 +16,8 @@ use crate::{
     types::{Campaign, CampaignStatus},
 };
 
+use crate::treasury::TreasuryClient;
+
 pub fn donate(
     env: Env,
     donor: Address,
@@ -52,9 +54,16 @@ pub fn donate(
         return Err(ContractError::CampaignClosed);
     }
 
-    token.transfer(
+    let treasury_address = storage::get_treasury(&env).unwrap();
+
+    let treasury = TreasuryClient::new(
+        &env,
+        &treasury_address,
+    );
+
+    treasury.deposit(
+        &campaign_id,
         &donor,
-        &env.current_contract_address(),
         &amount,
     );
 
@@ -143,8 +152,15 @@ pub fn withdraw(
         return Err(ContractError::NoFundsAvailable);
     }
 
-    token.transfer(
-        &env.current_contract_address(),
+    let treasury_address = storage::get_treasury(&env).unwrap();
+
+    let treasury = TreasuryClient::new(
+        &env,
+        &treasury_address,
+    );
+    
+    treasury.withdraw(
+        &campaign_id,
         &creator,
         &campaign.raised,
     );

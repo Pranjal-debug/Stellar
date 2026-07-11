@@ -1,10 +1,11 @@
 use crate::events::Withdrawn;
 
 use soroban_sdk::{
-    token,
     Address,
     Env,
 };
+
+use crate::token_client::Client as TokenClient;
 
 use crate::{
     errors::ContractError,
@@ -42,29 +43,29 @@ pub fn initialize(
 
 pub fn deposit(
     env: Env,
+    campaign_id: u32,
     from: Address,
     amount: i128,
-) -> Result<(), ContractError> {
-    from.require_auth();
+)-> Result<(), ContractError> {
 
     if amount <= 0 {
         return Err(ContractError::InvalidAmount);
     }
 
+    let mut treasury = storage::get_treasury(&env).unwrap();
+
     let token_address = storage::get_token(&env).unwrap();
 
-    let token = token::Client::new(
+    let token = TokenClient::new(
         &env,
         &token_address,
     );
-
+    
     token.transfer(
         &from,
         &env.current_contract_address(),
         &amount,
     );
-
-    let mut treasury = storage::get_treasury(&env).unwrap();
 
     treasury.balance += amount;
     treasury.total_received += amount;
@@ -74,11 +75,18 @@ pub fn deposit(
         &treasury,
     );
 
+    storage::increase_campaign_balance(
+        &env,
+        campaign_id,
+        amount,
+    );
+
     Ok(())
 }
 
 pub fn withdraw(
     env: Env,
+    campaign_id: u32,
     to: Address,
     amount: i128,
 ) -> Result<(), ContractError> {
@@ -93,17 +101,29 @@ pub fn withdraw(
 
     let mut treasury = storage::get_treasury(&env).unwrap();
 
+    let campaign_balance =
+    storage::get_campaign_balance(
+        &env,
+        campaign_id,
+    );
+
+    if campaign_balance < amount {
+        return Err(
+            ContractError::InsufficientBalance,
+        );
+    }
+
     if treasury.balance < amount {
         return Err(ContractError::InsufficientBalance);
     }
 
     let token_address = storage::get_token(&env).unwrap();
 
-    let token = token::Client::new(
+    let token = TokenClient::new(
         &env,
         &token_address,
     );
-
+    
     token.transfer(
         &env.current_contract_address(),
         &to,
@@ -112,6 +132,12 @@ pub fn withdraw(
 
     treasury.balance -= amount;
     treasury.total_distributed += amount;
+
+    storage::decrease_campaign_balance(
+        &env,
+        campaign_id,
+        amount,
+    );
 
     storage::save_treasury(
         &env,

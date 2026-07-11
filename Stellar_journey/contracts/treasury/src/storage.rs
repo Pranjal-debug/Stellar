@@ -8,6 +8,8 @@ pub enum DataKey {
     Admin,
     Token,
     Treasury,
+
+    CampaignBalance(u32),
 }
 
 // ----------------------
@@ -59,4 +61,65 @@ pub fn save_treasury(
     env.storage()
         .persistent()
         .set(&DataKey::Treasury, treasury);
+}
+
+// ----------------------
+// Campaign Balance
+// ----------------------
+
+pub fn get_campaign_balance(
+    env: &Env,
+    campaign_id: u32,
+) -> i128 {
+    env.storage()
+        .persistent()
+        .get(&DataKey::CampaignBalance(campaign_id))
+        .unwrap_or(0)
+}
+
+pub fn set_campaign_balance(
+    env: &Env,
+    campaign_id: u32,
+    amount: i128,
+) {
+    env.storage()
+        .persistent()
+        .set(
+            &DataKey::CampaignBalance(campaign_id),
+            &amount,
+        );
+}
+
+pub fn increase_campaign_balance(
+    env: &Env,
+    campaign_id: u32,
+    amount: i128,
+) {
+    let current = get_campaign_balance(
+        env,
+        campaign_id,
+    );
+
+    set_campaign_balance(
+        env,
+        campaign_id,
+        current + amount,
+    );
+}
+
+pub fn decrease_campaign_balance(
+    env: &Env,
+    campaign_id: u32,
+    amount: i128,
+) {
+    let current = get_campaign_balance(
+        env,
+        campaign_id,
+    );
+
+    set_campaign_balance(
+        env,
+        campaign_id,
+        current - amount,
+    );
 }
