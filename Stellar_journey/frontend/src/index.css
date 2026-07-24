@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:"Manrope",sans-serif;
+    background:#020617;
+    color:white;
+    overflow-x:hidden;
+}
+
+::selection{
+    background:#14F195;
+    color:black;
+}
+
+::-webkit-scrollbar{
+    width:8px;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#164e63;
+    border-radius:100px;
+}
+
+::-webkit-scrollbar-track{
+    background:#020617;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes floatSlow {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.float-slow {
+  animation: floatSlow 5s ease-in-out infinite;
+}
+
+.float-delay-1 {
+    animation-delay: 1s;
+}
+
+.float-delay-2 {
+    animation-delay: 2s;
+}
+
+.float-delay-3 {
+    animation-delay: 3s;
+}
+
+.connect{
+    border-radius: 100px !important;
+}

@@ -6,10 +6,11 @@ use crate::events::FundsWithdrawn;
 use crate::errors::ContractError;
 
 use soroban_sdk::{
-    token,
     Address,
     Env,
 };
+
+use crate::token_client;
 
 use crate::{
     storage::{self, DataKey},
@@ -25,14 +26,6 @@ pub fn donate(
     amount: i128,
 ) -> Result<(), ContractError> {
     donor.require_auth();
-
-    let token_address: Address = env
-    .storage()
-    .persistent()
-    .get(&DataKey::Token)
-    .expect("Token not initialized");
-
-    let token = token::Client::new(&env, &token_address);
 
     let mut campaign: Campaign = env
         .storage()
@@ -56,9 +49,23 @@ pub fn donate(
 
     let treasury_address = storage::get_treasury(&env).unwrap();
 
+    let token_address =
+    storage::get_token(&env).unwrap();
+
+    let token = token_client::Client::new(
+        &env,
+        &token_address,
+    );
+
     let treasury = TreasuryClient::new(
         &env,
         &treasury_address,
+    );
+
+    token.transfer(
+        &donor,
+        &treasury_address,
+        &amount,
     );
 
     treasury.deposit(
@@ -123,10 +130,6 @@ pub fn withdraw(
     campaign_id: u32,
 ) -> Result<(), ContractError> {
     creator.require_auth();
-
-    let token_address = storage::get_token(&env).unwrap();
-
-    let token = token::Client::new(&env, &token_address);
 
     let mut campaign: Campaign = env
         .storage()

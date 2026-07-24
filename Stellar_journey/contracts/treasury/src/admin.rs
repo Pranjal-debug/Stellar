@@ -60,13 +60,13 @@ pub fn deposit(
         &env,
         &token_address,
     );
-    
+
     token.transfer(
         &from,
         &env.current_contract_address(),
         &amount,
     );
-
+   
     treasury.balance += amount;
     treasury.total_received += amount;
 
@@ -123,13 +123,13 @@ pub fn withdraw(
         &env,
         &token_address,
     );
-    
+
     token.transfer(
         &env.current_contract_address(),
         &to,
         &amount,
     );
-
+    
     treasury.balance -= amount;
     treasury.total_distributed += amount;
 

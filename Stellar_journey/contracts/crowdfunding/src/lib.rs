@@ -15,6 +15,12 @@ mod treasury_client {
     );
 }
 
+mod token_client {
+    soroban_sdk::contractimport!(
+        file = "../../target/wasm32v1-none/release/token.wasm"
+    );
+}
+
 use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
 
 use types::Campaign;
@@ -118,6 +124,18 @@ impl CrowdfundingContract {
             creator,
             campaign_id,
         )
+    }
+
+    pub fn get_token(
+        env: Env,
+    ) -> Address {
+        storage::get_token(&env).unwrap()
+    }
+
+    pub fn get_treasury(
+        env: Env,
+    ) -> Address {
+        storage::get_treasury(&env).unwrap()
     }
 }
 

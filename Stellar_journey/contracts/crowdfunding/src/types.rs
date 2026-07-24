@@ -5,7 +5,7 @@ use soroban_sdk::{
 };
 
 #[contracttype]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum CampaignStatus {
     Active,
     Successful,
@@ -15,7 +15,7 @@ pub enum CampaignStatus {
 }
 
 #[contracttype]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Campaign {
     pub id: u32,
     pub creator: Address,

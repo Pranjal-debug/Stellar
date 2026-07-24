@@ -60,7 +60,7 @@ if deadline <= now {
         .publish(&env);
 
         Ok(())
-    }
+}
 
 pub fn get_campaign(env: Env, id: u32) -> Option<Campaign> {
     storage::get_campaign(&env, id)
